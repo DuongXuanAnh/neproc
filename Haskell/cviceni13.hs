@@ -1,3 +1,5 @@
+module Main where
+
 import System.IO
 
 -- 13. cvičení 2017-05-16
@@ -32,12 +34,8 @@ import System.IO
 --
 --   ap mf ma = do f <- mf; a <- ma; return (f a)
 --
--- Je tedy lepší to dělat tak, že místo return implementujeme pure a v instanci
--- typové třídy Monad pak jen napíšeme
---
---   return = pure
---
--- Ale to je prozatím jen detail.
+-- Vhodnější je implementovat pure přímo v instanci typové třídy Applicative;
+-- return už potom dostaneme automaticky.
 --
 -- Dalším (velice důležitým) příkladem monády je typový konstruktor IO, který
 -- reprezentuje výpočty se vstupem a výstupem (obecněji klasické "imperativní"
@@ -103,7 +101,7 @@ getTwoLines :: IO String
 getTwoLines = do
     l1 <- getLine
     l2 <- getLine
-    return $ l1 ++ "\n" ++ l2
+    pure $ l1 ++ "\n" ++ l2
 
 -- Dobrý nápad je strukturovat program tak, aby byl v IO jen kód, který tam
 -- musí být.
@@ -116,7 +114,7 @@ getTwoLines = do
 --   readAndProcess = do
 --       d <- getData
 --       let d' = process d
---       return d'
+--       pure d'
 --
 -- místo jedné akce, která dělá vše najednou.
 --
@@ -124,13 +122,13 @@ getTwoLines = do
 --   process = do
 --       d <- getData
 --       ...           -- Spousta kódu, který řeší zpracování d
---       return d'
+--       pure d'
 --
 -- Než se přesuneme k práci se soubory, podívejme se na pár dalších funkcí,
 -- které lze použít s monádami.
 
 when :: (Monad m) => Bool -> m () -> m ()
-when c m = if c then m else return ()
+when c m = if c then m else pure ()
 
 unless :: (Monad m) => Bool -> m () -> m ()
 unless = when . not
@@ -143,7 +141,7 @@ echo = do
 
 forever :: (Monad m) => m a -> m b
 forever m = do
-    m
+    _ <- m
     forever m
 
 -- Pro provádění více akcí najednou můžeme použít:
@@ -251,8 +249,7 @@ instance Applicative (State s) where
         in  (f a, s'')
 
 instance Monad (State s) where
-    return a = State $ \s -> (a, s)
-
+    -- return není zapotřebí, už jsme implementovali pure
     State m >>= f = State $ \s ->
         let (a, s') = m s
         in  runState (f a) s'
@@ -260,12 +257,12 @@ instance Monad (State s) where
 -- Předchozí funkci label můžeme přepsat takto:
 
 label' :: Tree a -> State Int (Tree Int)
-label' Leaf         = return Leaf
+label' Leaf         = pure Leaf
 label' (Node l _ r) = do
     l' <- label' l
     x' <- postIncrement
     r' <- label' r
-    return (Node l' x' r')
+    pure (Node l' x' r')
 
 -- Ještě poznámka na závěr. Možná vás napadla otázka, jestli je možné implementovat funkci
 -- extract :: (Monad m) => m a -> a.

@@ -71,7 +71,7 @@ parserBind :: Parser a -> (a -> Parser b) -> Parser b
 parserBind = undefined
 
 -- 'parserBind m f' nejprve spustí parser m. Pokud tenhle parser uspěje s hodnotou
--- 'a', tak pustí parser 'f a'.
+-- 'a', tak pustí parser 'f a' na zbylém textu.
 
 instance Functor Parser where
     fmap = M.liftM
@@ -81,8 +81,7 @@ instance Applicative Parser where
     (<*>) = M.ap
 
 instance Monad Parser where
-    return = pure
-    (>>=)  = parserBind
+    (>>=) = parserBind
 
 -- Správnost implementace 'satisfy', 'parserPure' a 'parserBind' pomůže
 -- ověřit následující definice. Pokud se v GHCi zeptáte na hodnotu 'correct',
